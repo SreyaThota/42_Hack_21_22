@@ -424,40 +424,6 @@ python agent/agent.py
 python server.py
 ```
 
----
-
-## 🌟 What Makes This Stand Out
-
-<details open>
-<summary><strong>Click to expand</strong></summary>
-
-### 🏆 1. 100% Test Pass Rate
-Every public and hidden test passes (150/150). Not just exit codes — full JSON comparison with field-by-field validation of errors, expanded rows, stitch counts, row numbers, and ordering.
-
-### 🤖 2. True Autonomous Agent Integration
-Not a manual coding project with "agent" slapped on. SPRK is a complete read-plan-code-test-repair loop with dual-model fallback, stagnation detection, regression protection, and comprehensive logging.
-
-### 💰 3. 100% Local — Zero API Costs
-Every LLM call goes through local Ollama. No OpenAI keys, no Claude subscriptions, no cloud bills. Proves that constrained local models + good engineering can match (and find) frontier-model quality.
-
-### 📊 4. Real-Time Monitoring Dashboard
-Web UI with live status, pipeline visualization, score chart, log viewer, code viewer, and failure analysis — all running on localhost:8000.
-
-### 📝 5. Full Logging Compliance
-All 7 required log files: prompts, decisions, commands, test runs, errors, human interventions, final report. Every manual action timestamped and disclosed.
-
-### 🐛 6. Systematic Bug-Fix History
-7 documented bug-fix cycles, each test-driven. From stitch model semantics to row repeat ordering to error object schema — every fix verified by running the full suite.
-
-### 🧹 7. Clean Architecture
-497 lines, zero external dependencies, pure Python stdlib. Easy to read, easy to verify, easy to run.
-
-### 🔬 8. Correct Stitch Simulation
-The consume/produce model is subtle: available-from-previous-row only decreases, while produced stitches accumulate separately. Most initial implementations get this wrong (including the LLM's first attempt).
-
-</details>
-
----
 
 ## 📜 License
 
