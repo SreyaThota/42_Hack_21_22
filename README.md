@@ -441,33 +441,14 @@ Per [hackathon rules](https://github.com/anavoronkova/42xNeedle_Hackathon/blob/m
 
 | Field | Value |
 |-------|-------|
-| **Team name** | ArchCipher |
-| **Members** | Sreya Thota |
+| **Team name** | SPARK |
+| **Members** | Sreya Thot , Kiruthika Murugananthan Ran Mo, Pedro Castro |
 | **GitHub** | [SreyaThota](https://github.com/SreyaThota) |
 | **Repository** | [github.com/SreyaThota/42_Hack_21_22](https://github.com/SreyaThota/42_Hack_21_22) |
 | **Checkpoint tag** | `agent-readiness-1945` |
 | **Model provider** | Ollama (local) |
 | **Paid models used** | No |
 
----
-
-## What you would change (if you had a day)
-
-1. **Model upgrade**: Swap qwen2.5-coder:7b for a model with 8K+ context window so the full 38KB spec fits without trimming — the 4K limit forced critical section relationships to be lost during planning.
-
-2. **Spec chunking → RAG retrieval**: Parse the spec into sections, embed them, and let the agent retrieve only relevant chunks per task (planning → sections 1-6, coding → sections 7-19, repair → section 18 + examples).
-
-3. **Structured plan format**: Force LLM to output JSON-schema plans (phases, modules, error codes, CLI shape) instead of free-text — makes the coder deterministic and reduces hallucinated features.
-
-4. **Multi-hypothesis repair**: When a test fails, spawn 3 parallel repair attempts with different strategies (minimal patch, full rewrite, targeted fix). Run all 3, keep the highest scorer.
-
-5. **Auto-git commits after every repair**: Each iteration gets committed with score in the message. Judges can walk through evolution commit-by-commit; rollback is instant.
-
-6. **Grammar-based fuzzing**: Parse error code specs, generate 500+ random valid/invalid `.knit` files, verify behavior against expected outcomes — catches edge cases the hand-written suite misses.
-
-7. **Property-based stitch verification**: Formal invariants — `start_stitches >= 0`, `end_stitches == total_produced`, `remaining never negative`, `overflow stops all simulation` — catches the stitch-model bug earlier.
-
----
 
 ## Resources
 
