@@ -1,0 +1,23 @@
+[2026-05-22 08:29] ERROR: Timeout on model qwen2.5-coder:7b after 300s
+[2026-05-22 08:34] ERROR: Timeout on model llama3.1:8b after 300s
+[2026-05-22 08:41] ERROR: Could not parse test output. Raw: 
+Traceback (most recent call last):
+  File "E:\42xNeedle_Hackathon-main\secret_spec\test_runner\run_tests.py", line 327, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "E:\42xNeedle_Hackathon-main\secret_spec\test_runner\run_tests.py", line 253, in main
+    proc = subpro
+[2026-05-22 08:45] ERROR: Could not parse test output. Raw: 
+Traceback (most recent call last):
+  File "E:\42xNeedle_Hackathon-main\secret_spec\test_runner\run_tests.py", line 327, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "E:\42xNeedle_Hackathon-main\secret_spec\test_runner\run_tests.py", line 253, in main
+    proc = subpro
+[2026-05-22 08:50] ERROR: Could not parse test output. Raw: 
+Traceback (most recent call last):
+  File "E:\42xNeedle_Hackathon-main\secret_spec\test_runner\run_tests.py", line 327, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "E:\42xNeedle_Hackathon-main\secret_spec\test_runner\run_tests.py", line 253, in main
+    proc = subpro

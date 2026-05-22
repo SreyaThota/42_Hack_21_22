@@ -1,0 +1,15 @@
+{
+  "primary_model": "qwen2.5-coder:7b",
+  "provider": "Ollama",
+  "additional_models": [
+    {
+      "model": "llama3.1:8b",
+      "provider": "Ollama",
+      "purpose": "failure analysis fallback"
+    }
+  ],
+  "paid_frontier_models_used_after_spec_release": false,
+  "copilot_or_paid_ide_assistant_used_after_spec_release": false,
+  "institutional_or_work_model_quota_used_after_spec_release": false,
+  "notes": "qwen2.5-coder:7b for code generation, llama3.1:8b for failure analysis. All local via Ollama."
+}

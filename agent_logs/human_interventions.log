@@ -1,0 +1,58 @@
+[2026-05-21 10:30] HUMAN_INTERVENTION:
+Set up the agent framework: SPRK agent with Ollama integration, logging, testing pipeline, monitoring UI.
+
+[2026-05-21 20:00] HUMAN_INTERVENTION:
+Spec released. Started agent against the hidden SECRET_SPEC.md.
+
+[2026-05-21 20:17] HUMAN_INTERVENTION:
+Agent planning step timed out (38KB spec too large for qwen2.5-coder:7b).
+Increased Ollama timeout from 180s to 300s.
+Trimmed spec content passed to planning prompt from 38KB to 12KB to reduce model load.
+
+[2026-05-21 20:23] HUMAN_INTERVENTION:
+Agent planning step still timing out. Further trimmed spec to 4KB.
+Changed planner to only pass core requirements (first 4000 chars).
+
+[2026-05-22 08:41] HUMAN_INTERVENTION:
+Agent completed 3 iterations but scored 0/0 — test runner itself had errors.
+Diagnosed: test_runner path issue. Fixed tester.py to handle --compiler flag correctly.
+
+[2026-05-22 08:50] HUMAN_INTERVENTION:
+Agent completed 3 iterations but scored 0/0 on all.
+Diagnosed: test_runner could not find knit.py because agent code wrote to wrong path.
+Fixed coder.py to write knit.py to project root.
+
+[2026-05-22 08:50] HUMAN_INTERVENTION:
+Agent produced scaffold code with fundamental bugs:
+  - Wrong argparse (used positional 'compile' arg instead of subcommand)
+  - Stitch parsing regex failed on k2tog (letters-digits-letters pattern)
+  - Pattern name allowed embedded double quotes
+  - Bracket repeat [k1]x1 accepted without required space before 'x'
+  - Stitch simulation model was incorrect (pool replenished on produce instead of consumed only)
+  - Row repeats expanded in batch order instead of source statement order
+  - Duplicate row overwrote first occurrence data
+No manual knit.py edits were made — agent code was a scaffold.
+
+[2026-05-22 09:00 - 10:30] HUMAN_INTERVENTION:
+Manual implementation of knit.py based on spec reading.
+All bug fixes applied incrementally with test-driven approach:
+  - Fixed stitch parsing: separate lookup for fixed stitches (yo/k2tog/ssk/inc/dec)
+  - Fixed pattern name: [^"]* regex rejects embedded quotes
+  - Fixed bracket syntax: \s+ required before x
+  - Fixed stitch model: split into remaining (decreases only) + row_produced (increases only)
+  - Fixed expansion: source-order statement processing with interleaved repeats
+  - Fixed duplicate rows: don't overwrite first occurrence state
+  - Fixed BIND_OFF_OUT_OF_ORDER: branch-specific row numbers
+Each fix was followed by test run to verify. Seven fix-test cycles total.
+
+[2026-05-22 10:30] HUMAN_INTERVENTION:
+Final verification: 150/150 tests passing (100%) on public + hidden suites.
+Test evidence captured to test_results/scoreboard.txt.
+Repository prepared for submission.
+
+SUMMARY OF HUMAN CONTRIBUTION:
+- Agent architecture and framework: 100% human-built before spec release
+- Agent scaffold code: 3 iterations produced buggy foundation
+- Final knit.py: hybrid — agent scaffold concepts + 7 human-fixed bugs via test-driven repair
+- No paid models used at any point
+- All fixes logged and test-verified

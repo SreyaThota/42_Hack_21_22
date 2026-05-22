@@ -1,0 +1,96 @@
+[2026-05-22 08:41] COMMAND: C:\Users\sreya\AppData\Local\Programs\Python\Python313\python.exe E:\42xNeedle_Hackathon-main\secret_spec\test_runner\run_tests.py --compiler C:\Users\sreya\AppData\Local\Programs\Python\Python313\python.exe knit.py --suite public --mode full
+[2026-05-22 08:41] COMMAND: C:\Users\sreya\AppData\Local\Programs\Python\Python313\python.exe E:\42xNeedle_Hackathon-main\secret_spec\test_runner\run_tests.py --compiler C:\Users\sreya\AppData\Local\Programs\Python\Python313\python.exe knit.py --suite public --mode full
+[2026-05-22 08:41] OUTPUT: Traceback (most recent call last):
+  File "E:\42xNeedle_Hackathon-main\secret_spec\test_runner\run_tests.py", line 327, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "E:\42xNeedle_Hackathon-main\secret_spec\test_runner\run_tests.py", line 253, in main
+    proc = subprocess.run(cmd, cwd=args.cwd, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  File "C:\Users\sreya\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 554, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreya\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1036, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreya\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1548, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+FileNotFoundError: [WinError 2] The system cannot find the file specified
+[2026-05-22 08:45] COMMAND: C:\Users\sreya\AppData\Local\Programs\Python\Python313\python.exe E:\42xNeedle_Hackathon-main\secret_spec\test_runner\run_tests.py --compiler C:\Users\sreya\AppData\Local\Programs\Python\Python313\python.exe knit.py --suite public --mode full
+[2026-05-22 08:45] COMMAND: C:\Users\sreya\AppData\Local\Programs\Python\Python313\python.exe E:\42xNeedle_Hackathon-main\secret_spec\test_runner\run_tests.py --compiler C:\Users\sreya\AppData\Local\Programs\Python\Python313\python.exe knit.py --suite public --mode full
+[2026-05-22 08:45] OUTPUT: Traceback (most recent call last):
+  File "E:\42xNeedle_Hackathon-main\secret_spec\test_runner\run_tests.py", line 327, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "E:\42xNeedle_Hackathon-main\secret_spec\test_runner\run_tests.py", line 253, in main
+    proc = subprocess.run(cmd, cwd=args.cwd, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  File "C:\Users\sreya\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 554, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreya\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1036, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreya\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1548, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+FileNotFoundError: [WinError 2] The system cannot find the file specified
+[2026-05-22 08:50] COMMAND: C:\Users\sreya\AppData\Local\Programs\Python\Python313\python.exe E:\42xNeedle_Hackathon-main\secret_spec\test_runner\run_tests.py --compiler C:\Users\sreya\AppData\Local\Programs\Python\Python313\python.exe knit.py --suite public --mode full
+[2026-05-22 08:50] COMMAND: C:\Users\sreya\AppData\Local\Programs\Python\Python313\python.exe E:\42xNeedle_Hackathon-main\secret_spec\test_runner\run_tests.py --compiler C:\Users\sreya\AppData\Local\Programs\Python\Python313\python.exe knit.py --suite public --mode full
+[2026-05-22 08:50] OUTPUT: Traceback (most recent call last):
+  File "E:\42xNeedle_Hackathon-main\secret_spec\test_runner\run_tests.py", line 327, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "E:\42xNeedle_Hackathon-main\secret_spec\test_runner\run_tests.py", line 253, in main
+    proc = subprocess.run(cmd, cwd=args.cwd, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  File "C:\Users\sreya\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 554, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreya\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1036, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sreya\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 1548, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+                             # no special security
+                             ^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+                             cwd,
+                             ^^^^
+                             startupinfo)
+                             ^^^^^^^^^^^^
+FileNotFoundError: [WinError 2] The system cannot find the file specified

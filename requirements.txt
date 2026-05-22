@@ -1,0 +1,15 @@
+# Knitting Compiler — No external dependencies
+# Python 3.11+ stdlib only
+# - argparse (CLI parsing)
+# - json (output)
+# - re (pattern matching)
+# - sys (exit codes)
+#
+# For the SPRK agent framework:
+# - requests (Ollama API calls)
+# - py_compile (syntax validation, built-in)
+#
+# Install Ollama for LLM inference:
+#   https://ollama.com/download
+#   ollama pull qwen2.5-coder:7b
+#   ollama pull llama3.1:8b

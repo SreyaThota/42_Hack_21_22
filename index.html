@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPRK Agent Monitor</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<style>
+:root {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #1c2128;
+  --bg-hover: #21262d;
+  --border: #30363d;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
+  --accent: #58a6ff;
+  --green: #3fb950;
+  --red: #f85149;
+  --orange: #d29922;
+  --gold: #e3b341;
+  --blue: #58a6ff;
+  --pipeline-width: 260px;
+  --status-height: 64px;
+  --feed-width: 1fr;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.mono { font-family: 'SFMono-Regular', 'Cascadia Code', 'Fira Code', Consolas, monospace; }
+
+/* Status Bar */
+.status-bar {
+  height: var(--status-height);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.status-left { display: flex; align-items: center; gap: 16px; }
+.status-agent { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.status-agent .icon { font-size: 24px; }
+.status-badge {
+  display: inline-block; padding: 4px 12px; border-radius: 20px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.status-badge.running { background: rgba(63,185,80,0.15); color: var(--green); }
+.status-badge.done { background: rgba(227,179,65,0.15); color: var(--gold); }
+.status-badge.failed { background: rgba(248,81,73,0.15); color: var(--red); }
+.status-badge.waiting { background: rgba(139,148,158,0.15); color: var(--text-secondary); }
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+.status-badge.running { animation: pulse-badge 2s ease-in-out infinite; }
+
+.status-metrics { display: flex; gap: 24px; font-size: 13px; }
+.status-metrics .metric { display: flex; align-items: center; gap: 6px; }
+.status-metrics .label { color: var(--text-secondary); }
+.status-metrics .value { color: var(--text-primary); font-weight: 600; }
+.status-right { display: flex; align-items: center; gap: 12px; }
+.status-elapsed { font-size: 12px; color: var(--text-muted); }
+.status-elapsed strong { color: var(--text-secondary); font-weight: 500; }
+
+.btn {
+  padding: 6px 14px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg-tertiary); color: var(--text-primary);
+  cursor: pointer; font-size: 12px; font-weight: 500;
+  transition: background 0.2s, border-color 0.2s;
+}
+.btn:hover { background: var(--bg-hover); border-color: var(--text-muted); }
+.btn-danger { color: var(--red); border-color: rgba(248,81,73,0.3); }
+.btn-danger:hover { background: rgba(248,81,73,0.1); border-color: var(--red); }
+.btn-primary { color: #fff; border-color: var(--accent); background: var(--accent); }
+.btn-primary:hover { background: #4c96e8; border-color: #4c96e8; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Prompt Input */
+.prompt-section {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 20px;
+  display: none;
+}
+.prompt-section.visible { display: block; }
+.prompt-section.running { display: none; }
+.prompt-row { display: flex; gap: 12px; align-items: flex-start; }
+.prompt-textarea {
+  flex: 1; min-height: 80px; max-height: 160px; resize: vertical;
+  padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--bg-tertiary); color: var(--text-primary);
+  font-size: 14px; font-family: inherit; outline: none; line-height: 1.5;
+}
+.prompt-textarea:focus { border-color: var(--accent); }
+.prompt-textarea::placeholder { color: var(--text-muted); }
+.prompt-actions { display: flex; flex-direction: column; gap: 8px; min-width: 110px; }
+.prompt-actions .btn { padding: 10px 16px; font-size: 14px; font-weight: 600; text-align: center; }
+.prompt-info { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.prompt-submitted {
+  display: none; align-items: center; gap: 10px;
+  padding: 12px 16px; background: rgba(63,185,80,0.1);
+  border: 1px solid rgba(63,185,80,0.2); border-radius: 8px;
+  font-size: 13px; color: var(--green);
+}
+.prompt-submitted.visible { display: flex; }
+
+/* Main Grid */
+.main-grid {
+  display: grid;
+  grid-template-columns: var(--pipeline-width) 1fr 1fr;
+  grid-template-rows: auto auto auto 1fr;
+  gap: 1px;
+  background: var(--border);
+  min-height: calc(100vh - var(--status-height));
+}
+.main-grid > * { background: var(--bg-primary); }
+
+/* Pipeline Panel */
+.pipeline-panel { grid-row: 1 / 4; }
+.pipeline-panel .panel-header {
+  padding: 16px 20px; font-weight: 600; font-size: 13px;
+  color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+}
+.pipeline-steps { padding: 12px 16px; }
+.pipeline-step {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 8px; border-radius: 8px;
+  position: relative; font-size: 13px; color: var(--text-muted);
+  transition: all 0.3s ease;
+}
+.pipeline-step .step-icon { width: 24px; text-align: center; font-size: 16px; }
+.pipeline-step .step-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--bg-hover); flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+.pipeline-step.done .step-dot { background: var(--green); box-shadow: 0 0 6px rgba(63,185,80,0.4); }
+.pipeline-step.done .step-label { color: var(--green); }
+.pipeline-step.active .step-dot { background: var(--accent); box-shadow: 0 0 8px rgba(88,166,255,0.5); }
+.pipeline-step.active .step-label { color: var(--accent); }
+
+@keyframes step-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.pipeline-step.active .step-icon { animation: step-spin 1.5s linear infinite; }
+
+.pipeline-step.failed .step-dot { background: var(--red); box-shadow: 0 0 6px rgba(248,81,73,0.4); }
+.pipeline-step.failed .step-label { color: var(--red); }
+.pipeline-step.waiting .step-dot { background: var(--bg-hover); }
+
+.step-connector {
+  width: 2px; height: 12px; background: var(--bg-hover);
+  margin-left: 18px; transition: background 0.3s;
+}
+.pipeline-step.done + .step-connector { background: var(--green); }
+
+/* Panel shared */
+.panel-header {
+  padding: 12px 16px; font-weight: 600; font-size: 12px;
+  color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.panel-body { padding: 12px 16px; overflow-y: auto; }
+
+/* Live Log Feed */
+.log-feed { grid-row: 1 / 4; overflow: hidden; display: flex; flex-direction: column; }
+.log-feed .panel-body { flex: 1; overflow-y: auto; padding: 8px 12px; }
+.log-search {
+  width: 100%; padding: 6px 10px; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--bg-tertiary); color: var(--text-primary);
+  font-size: 12px; font-family: inherit; outline: none;
+}
+.log-search:focus { border-color: var(--accent); }
+.log-entry {
+  padding: 4px 8px; margin: 2px 0; border-radius: 4px;
+  font-size: 11px; line-height: 1.5; font-family: 'SFMono-Regular', Consolas, monospace;
+  word-break: break-word;
+}
+.log-entry:hover { background: rgba(255,255,255,0.03); }
+.log-entry .ts { color: var(--text-muted); }
+.log-entry .label { font-weight: 600; }
+.log-entry.type-prompt .label { color: var(--blue); }
+.log-entry.type-decision .label { color: var(--gold); }
+.log-entry.type-command .label { color: var(--text-secondary); }
+.log-entry.type-testrun .label { color: var(--green); }
+.log-entry.type-error .label { color: var(--red); }
+.log-entry.type-human .label { color: var(--orange); }
+.log-entry .msg { color: var(--text-primary); }
+
+.log-empty {
+  text-align: center; color: var(--text-muted); padding: 40px 20px; font-size: 13px;
+}
+
+/* Score Progression */
+.scores-panel { grid-column: 2 / 4; max-height: 200px; overflow-y: auto; }
+.score-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 6px 0; font-size: 13px;
+}
+.score-attempt {
+  min-width: 80px; color: var(--text-secondary); font-weight: 500;
+}
+.score-bar-wrap {
+  flex: 1; height: 20px; background: var(--bg-tertiary);
+  border-radius: 10px; overflow: hidden; position: relative;
+}
+.score-bar {
+  height: 100%; border-radius: 10px; transition: width 0.5s ease, background 0.3s;
+  position: relative;
+}
+.score-bar.bad { background: var(--red); }
+.score-bar.ok { background: var(--orange); }
+.score-bar.good { background: var(--green); }
+
+@keyframes score-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.score-row.active .score-bar { animation: score-pulse 1.5s ease-in-out infinite; }
+
+.score-text { min-width: 60px; font-weight: 600; font-size: 12px; color: var(--text-primary); text-align: right; }
+.score-delta { font-size: 11px; font-weight: 500; min-width: 80px; }
+.score-delta.up { color: var(--green); }
+.score-delta.down { color: var(--red); }
+
+/* Failure Analysis */
+.failure-panel { }
+.failure-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 0; font-size: 13px;
+}
+.failure-name { min-width: 160px; color: var(--text-primary); font-weight: 500; }
+.failure-bar-wrap {
+  flex: 1; height: 8px; background: var(--bg-tertiary);
+  border-radius: 4px; overflow: hidden;
+}
+.failure-bar { height: 100%; border-radius: 4px; transition: width 0.5s; }
+.failure-bar.fail { background: var(--red); }
+.failure-bar.partial { background: var(--orange); }
+.failure-bar.pass { background: var(--green); }
+.failure-status { min-width: 60px; text-align: right; font-size: 11px; font-weight: 600; }
+.failure-empty { color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px; }
+
+/* Code Viewer */
+.code-panel { overflow: hidden; display: flex; flex-direction: column; }
+.code-panel .panel-body { flex: 1; overflow: auto; padding: 0; position: relative; }
+.code-panel .panel-body pre {
+  margin: 0; padding: 16px; font-size: 12px; line-height: 1.5;
+  background: var(--bg-primary) !important;
+}
+.code-panel .panel-body code { background: transparent !important; }
+.code-empty {
+  text-align: center; color: var(--text-muted); padding: 30px; font-size: 13px;
+}
+.code-timestamp {
+  font-size: 11px; color: var(--text-muted); font-weight: 400; text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Log Tabs */
+.tabs-panel { grid-column: 1 / 4; max-height: 220px; display: flex; flex-direction: column; }
+.tabs-bar {
+  display: flex; border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary); overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 14px; border: none; background: transparent;
+  color: var(--text-muted); cursor: pointer; font-size: 12px; font-weight: 500;
+  border-bottom: 2px solid transparent; white-space: nowrap;
+  transition: all 0.2s;
+}
+.tab-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-btn .count {
+  display: inline-block; margin-left: 6px; padding: 0 6px;
+  background: var(--bg-hover); border-radius: 8px;
+  font-size: 10px; font-weight: 600; color: var(--text-secondary);
+}
+.tab-content { flex: 1; overflow-y: auto; padding: 8px 12px; position: relative; }
+.tab-toolbar {
+  display: flex; align-items: center; gap: 8px; padding: 6px 12px;
+  border-bottom: 1px solid var(--border); background: var(--bg-secondary);
+}
+.tab-toolbar .log-search { flex: 1; }
+.tab-entry {
+  padding: 3px 8px; font-size: 11px; line-height: 1.5;
+  font-family: 'SFMono-Regular', Consolas, monospace; word-break: break-word;
+  border-radius: 2px;
+}
+.tab-entry:nth-child(even) { background: rgba(255,255,255,0.015); }
+
+/* Alert Banners */
+.alert-banner {
+  display: none; align-items: center; gap: 12px;
+  padding: 10px 20px; font-size: 13px; font-weight: 500;
+}
+.alert-banner.visible { display: flex; }
+.alert-banner.error { background: rgba(248,81,73,0.1); color: var(--red); border-bottom: 1px solid rgba(248,81,73,0.2); }
+.alert-banner.warning { background: rgba(210,153,34,0.1); color: var(--orange); border-bottom: 1px solid rgba(210,153,34,0.2); }
+.alert-banner.success { background: rgba(63,185,80,0.1); color: var(--green); border-bottom: 1px solid rgba(63,185,80,0.2); }
+
+@keyframes flash-success {
+  0% { background: rgba(63,185,80,0.3); }
+  100% { background: transparent; }
+}
+.flash-green { animation: flash-success 1s ease-out; }
+
+@keyframes flash-warning {
+  0% { background: rgba(210,153,34,0.3); }
+  100% { background: transparent; }
+}
+.flash-orange { animation: flash-warning 1s ease-out; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Responsive */
+@media (max-width: 1280px) {
+  :root { --pipeline-width: 220px; }
+  .failure-name { min-width: 120px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Status Bar -->
+<header class="status-bar">
+  <div class="status-left">
+    <div class="status-agent">
+      <span class="icon">&#x1F916;</span>
+      <span>SPRK</span>
+    </div>
+    <span class="status-badge waiting" id="statusBadge">WAITING</span>
+    <div class="status-metrics">
+      <div class="metric"><span class="label">Attempt</span><span class="value" id="attemptDisplay">0/15</span></div>
+      <div class="metric"><span class="label">Score</span><span class="value" id="scoreDisplay">--/--</span></div>
+    </div>
+  </div>
+  <div class="status-right">
+    <span class="status-elapsed" id="elapsedDisplay"><strong>Elapsed:</strong> 0s</span>
+    <button class="btn btn-danger" id="stopBtn">&#x25A0; STOP</button>
+  </div>
+</header>
+
+<!-- Alert Banner -->
+<div class="alert-banner" id="alertBanner">
+  <span id="alertIcon">&#x26A0;</span>
+  <span id="alertMessage"></span>
+</div>
+
+<!-- Prompt Input -->
+<div class="prompt-section visible" id="promptSection">
+  <div class="prompt-row">
+    <textarea class="prompt-textarea" id="promptInput"
+      placeholder="Describe what you want the agent to build...&#10;Example: Build a Python CLI that reads a CSV file and plots the data with matplotlib"></textarea>
+    <div class="prompt-actions">
+      <button class="btn btn-primary" id="launchBtn" onclick="submitPrompt()">&#x25B6; Launch Agent</button>
+      <small class="prompt-info">The agent will read this, plan, code, test, and repair autonomously</small>
+    </div>
+  </div>
+  <div class="prompt-submitted" id="promptSubmitted">
+    <span>&#x2705;</span>
+    <span>Agent launched with your prompt — monitoring below</span>
+  </div>
+</div>
+
+<!-- Main Grid -->
+<div class="main-grid" id="mainGrid">
+
+  <!-- Pipeline -->
+  <div class="pipeline-panel">
+    <div class="panel-header">Pipeline Steps</div>
+    <div class="pipeline-steps" id="pipelineSteps"></div>
+  </div>
+
+  <!-- Live Log Feed -->
+  <div class="log-feed">
+    <div class="panel-header">
+      <span>Live Log Feed</span>
+      <input class="log-search" id="logSearch" placeholder="Filter logs..." autocomplete="off">
+    </div>
+    <div class="panel-body" id="logFeed"></div>
+  </div>
+
+  <!-- Score Progression -->
+  <div class="scores-panel">
+    <div class="panel-header">Test Results</div>
+    <div class="panel-body" id="scoresPanel"></div>
+  </div>
+
+  <!-- Failure Analysis -->
+  <div class="failure-panel">
+    <div class="panel-header">Failure Analysis</div>
+    <div class="panel-body" id="failurePanel"></div>
+  </div>
+
+  <!-- Current Code -->
+  <div class="code-panel">
+    <div class="panel-header">
+      <span>Current Code (<span id="codeLang">Python</span>)</span>
+      <span class="code-timestamp" id="codeTimestamp"></span>
+    </div>
+    <div class="panel-body" id="codePanel">
+      <pre><code id="codeContent"></code></pre>
+      <div class="code-empty" id="codeEmpty">Agent hasn't written code yet</div>
+    </div>
+  </div>
+
+  <!-- Log Tabs -->
+  <div class="tabs-panel">
+    <div class="tabs-bar" id="tabsBar"></div>
+    <div class="tab-toolbar">
+      <input class="log-search" id="tabSearch" placeholder="Search tab..." autocomplete="off">
+      <button class="btn" id="copyAllBtn">&#x2398; Copy all</button>
+    </div>
+    <div class="tab-content mono" id="tabContent"></div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+// ===== STATE =====
+const STATE = {
+  status: 'waiting',
+  attempt: 0,
+  maxAttempts: 15,
+  score: null,
+  scores: [],
+  failures: [],
+  logEntries: { prompts: [], decisions: [], commands: [], test_runs: [], errors: [], human_interventions: [] },
+  rawLogs: { prompts: '', decisions: '', commands: '', test_runs: '', errors: '', human_interventions: '' },
+  currentCode: '',
+  hasCode: false,
+  firstSeen: null,
+  lastUpdated: null,
+  prevBestScore: 0,
+  apiRunning: false,
+};
+
+const PIPELINE_STEPS = [
+  { id: 'spec',    icon: '&#x1F4C4;', label: 'Read Spec' },
+  { id: 'plan',    icon: '&#x1F9E0;', label: 'Plan Implementation' },
+  { id: 'code',    icon: '&#x270D;&#xFE0F;', label: 'Write Code' },
+  { id: 'test',    icon: '&#x1F9EA;', label: 'Run Tests' },
+  { id: 'analyze', icon: '&#x1F50D;', label: 'Analyze Failures' },
+  { id: 'repair',  icon: '&#x1F527;', label: 'Repair Code' },
+  { id: 'loop',    icon: '&#x1F501;', label: 'Loop / Next Attempt' },
+];
+
+const LOG_FILES = ['prompts', 'decisions', 'commands', 'test_runs', 'errors', 'human_interventions'];
+const LOG_LABELS = {
+  prompts: 'USER_PROMPT',
+  decisions: 'DECISION',
+  commands: 'COMMAND',
+  test_runs: 'TEST_RUN',
+  errors: 'ERROR',
+  human_interventions: 'HUMAN_INTERVENTION'
+};
+const LOG_COLORS = {
+  USER_PROMPT: 'var(--blue)',
+  DECISION: 'var(--gold)',
+  COMMAND: 'var(--text-secondary)',
+  TEST_RUN: 'var(--green)',
+  ERROR: 'var(--red)',
+  HUMAN_INTERVENTION: 'var(--orange)'
+};
+
+// ===== TIMESTAMP REGEX =====
+const LOG_REGEX = /\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2})?)\]\s*(\w+(?:_\w+)*):\s*([\s\S]*?)(?=\n\[|\n*$)/g;
+
+// ===== DOM REFS =====
+const $ = id => document.getElementById(id);
+const statusBadge = $('statusBadge');
+const attemptDisplay = $('attemptDisplay');
+const scoreDisplay = $('scoreDisplay');
+const elapsedDisplay = $('elapsedDisplay');
+const pipelineSteps = $('pipelineSteps');
+const logFeed = $('logFeed');
+const logSearch = $('logSearch');
+const scoresPanel = $('scoresPanel');
+const failurePanel = $('failurePanel');
+const codeContent = $('codeContent');
+const codeEmpty = $('codeEmpty');
+const codeTimestamp = $('codeTimestamp');
+const tabsBar = $('tabsBar');
+const tabContent = $('tabContent');
+const tabSearch = $('tabSearch');
+const copyAllBtn = $('copyAllBtn');
+const alertBanner = $('alertBanner');
+const alertMessage = $('alertMessage');
+const alertIcon = $('alertIcon');
+
+// ===== HELPERS =====
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function timeAgo(date) {
+  if (!date) return 'never';
+  const sec = Math.floor((Date.now() - date) / 1000);
+  if (sec < 3) return 'just now';
+  if (sec < 60) return sec + 's ago';
+  const m = Math.floor(sec / 60);
+  if (m < 60) return m + 'm ' + (sec % 60) + 's ago';
+  return Math.floor(m / 60) + 'h ' + (m % 60) + 'm ago';
+}
+
+function fmtElapsed(ms) {
+  if (!ms) return '0s';
+  const sec = Math.floor(ms / 1000);
+  if (sec < 60) return sec + 's';
+  const m = Math.floor(sec / 60);
+  if (m < 60) return m + 'm ' + (sec % 60) + 's';
+  return Math.floor(m / 60) + 'h ' + (m % 60) + 'm';
+}
+
+function scoreClass(pct) {
+  if (pct >= 80) return 'good';
+  if (pct >= 50) return 'ok';
+  return 'bad';
+}
+
+// ===== FETCH & PARSE =====
+async function fetchText(url) {
+  try {
+    const resp = await fetch(url + '?_t=' + Date.now());
+    if (!resp.ok) return '';
+    return await resp.text();
+  } catch (e) {
+    return '';
+  }
+}
+
+function parseLogEntries(text) {
+  const entries = [];
+  LOG_REGEX.lastIndex = 0;
+  let match;
+  while ((match = LOG_REGEX.exec(text)) !== null) {
+    entries.push({ timestamp: match[1], type: match[2], message: match[3].trim() });
+  }
+  return entries;
+}
+
+async function fetchAll() {
+  const [promptsRaw, decisionsRaw, commandsRaw, testRunsRaw, errorsRaw, humanRaw, solutionRaw] = await Promise.all([
+    fetchText('agent_logs/prompts.log'),
+    fetchText('agent_logs/decisions.log'),
+    fetchText('agent_logs/commands.log'),
+    fetchText('agent_logs/test_runs.log'),
+    fetchText('agent_logs/errors.log'),
+    fetchText('agent_logs/human_interventions.log'),
+    fetchText('knit.py'),
+  ]);
+
+  STATE.rawLogs.prompts = promptsRaw;
+  STATE.rawLogs.decisions = decisionsRaw;
+  STATE.rawLogs.commands = commandsRaw;
+  STATE.rawLogs.test_runs = testRunsRaw;
+  STATE.rawLogs.errors = errorsRaw;
+  STATE.rawLogs.human_interventions = humanRaw;
+
+  STATE.logEntries.prompts = parseLogEntries(promptsRaw);
+  STATE.logEntries.decisions = parseLogEntries(decisionsRaw);
+  STATE.logEntries.commands = parseLogEntries(commandsRaw);
+  STATE.logEntries.test_runs = parseLogEntries(testRunsRaw);
+  STATE.logEntries.errors = parseLogEntries(errorsRaw);
+  STATE.logEntries.human_interventions = parseLogEntries(humanRaw);
+
+  STATE.currentCode = solutionRaw;
+  STATE.hasCode = solutionRaw.length > 0;
+  STATE.lastUpdated = new Date();
+
+  if (!STATE.firstSeen) {
+    STATE.firstSeen = STATE.lastUpdated;
+  }
+
+  parseState();
+  renderAll();
+}
+
+// ===== STATE PARSING =====
+function parseState() {
+  const decisions = STATE.logEntries.decisions;
+  const testRuns = STATE.logEntries.test_runs;
+  const decText = STATE.rawLogs.decisions.toLowerCase();
+  const testText = STATE.rawLogs.test_runs.toLowerCase();
+
+  const stepStatuses = {};
+
+  if (decText.includes('spec read') || decText.includes('reading spec from')) {
+    stepStatuses.spec = 'done';
+  }
+  if (decText.includes('plan') && (decText.includes('generated') || decText.includes('created'))) {
+    stepStatuses.plan = 'done';
+  }
+  if (decText.includes('written solution') || decText.includes('writing solution')) {
+    stepStatuses.code = 'done';
+  }
+  if (STATE.logEntries.test_runs.length > 0) {
+    stepStatuses.test = 'done';
+  }
+  if (decText.includes('fail') || decText.includes('repair') || decText.includes('analy')) {
+    stepStatuses.analyze = 'done';
+    stepStatuses.repair = 'done';
+  }
+  if (decText.includes('attempt')) {
+    stepStatuses.loop = 'done';
+  }
+
+  if (decisions.length > 0) {
+    const last = decisions[decisions.length - 1];
+    const lm = last.message.toLowerCase();
+    if (lm.includes('plan') && !lm.includes('generated') && !lm.includes('created')) {
+      stepStatuses.plan = 'active';
+    }
+    if (lm.includes('writing') || (lm.includes('=== attempt') && !stepStatuses.code)) {
+      stepStatuses.code = 'active';
+    }
+    if ((lm.includes('running tests') || lm.includes('test_run')) && !stepStatuses.test) {
+      stepStatuses.test = 'active';
+    }
+    if ((lm.includes('repair') || lm.includes('fail') || lm.includes('analy')) && !decText.includes('all tests passed')) {
+      stepStatuses.analyze = 'active';
+      stepStatuses.repair = 'active';
+    }
+  }
+
+  // If test_runs.log has entries with scores, test is done
+  if (testRuns.length > 0) {
+    const lastTest = testRuns[testRuns.length - 1];
+    if (lastTest.message.match(/\d+\/\d+/)) {
+      stepStatuses.test = 'done';
+    }
+  }
+
+  const apiRunning = STATE.apiRunning;
+  if (decText.includes('all tests passed')) {
+    STATE.status = 'done';
+    for (const k of Object.keys(stepStatuses)) stepStatuses[k] = 'done';
+  } else if (STATE.logEntries.errors.length > 5) {
+    STATE.status = 'failed';
+  } else if (STATE.firstSeen && STATE.logEntries.decisions.length > 0) {
+    STATE.status = 'running';
+  } else if (!apiRunning && STATE.firstSeen) {
+    // Agent finished and logs were archived — show done even without "all passed"
+    STATE.status = 'done';
+    for (const k of Object.keys(stepStatuses)) stepStatuses[k] = 'done';
+  } else if (!apiRunning) {
+    STATE.status = 'waiting';
+  }
+
+  let foundWaiting = false;
+  for (const step of PIPELINE_STEPS) {
+    if (stepStatuses[step.id] === 'done') {
+      step.status = 'done';
+    } else if (!foundWaiting && (stepStatuses[step.id] === 'active' || !stepStatuses[step.id])) {
+      step.status = 'active';
+      foundWaiting = true;
+    } else {
+      step.status = 'waiting';
+    }
+  }
+  if (STATE.status === 'done') {
+    for (const step of PIPELINE_STEPS) step.status = 'done';
+  }
+
+  // Parse scores from test_runs.log
+  const scoreEntries = [];
+  for (const entry of STATE.logEntries.test_runs) {
+    const m = entry.message.match(/(\d+)\/(\d+)/);
+    if (m) {
+      scoreEntries.push({ passed: parseInt(m[1]), total: parseInt(m[2]), timestamp: entry.timestamp });
+    }
+  }
+  STATE.scores = scoreEntries;
+
+  if (scoreEntries.length > 0) {
+    const last = scoreEntries[scoreEntries.length - 1];
+    STATE.score = last;
+    STATE.attempt = scoreEntries.length;
+    if (last.passed === last.total) {
+      STATE.status = 'done';
+      for (const step of PIPELINE_STEPS) step.status = 'done';
+    }
+  }
+
+  // Parse attempt number from decisions
+  const attemptMatch = STATE.rawLogs.decisions.match(/Attempt (\d+)/gi);
+  if (attemptMatch) {
+    const nums = attemptMatch.map(s => parseInt(s.match(/\d+/)[0])).filter(n => !isNaN(n));
+    if (nums.length > 0) {
+      STATE.attempt = Math.max(STATE.attempt, Math.max(...nums));
+    }
+  }
+  if (STATE.attempt < 1 && STATE.logEntries.decisions.length > 0) STATE.attempt = 1;
+
+  // Parse failures - look for test names with scores in commands.log
+  const failureData = [];
+  const cmdText = STATE.rawLogs.commands;
+  const failPattern = /([\w_]+):\s*(\d+)\/(\d+)/g;
+  let fm;
+  while ((fm = failPattern.exec(cmdText)) !== null) {
+    const name = fm[1];
+    // Avoid matching common words
+    if (!['Attempt', 'Score', 'Results', 'Running'].includes(name)) {
+      failureData.push({ name, passed: parseInt(fm[2]), total: parseInt(fm[3]) });
+    }
+  }
+  STATE.failures = failureData;
+}
+
+// ===== RENDER =====
+function renderAll() {
+  renderStatusBar();
+  renderPipeline();
+  renderLogFeed();
+  renderScores();
+  renderFailures();
+  renderCode();
+  renderTabs();
+  renderAlerts();
+}
+
+function renderStatusBar() {
+  const s = STATE.status;
+  statusBadge.className = 'status-badge ' + s;
+  statusBadge.textContent = s.toUpperCase();
+  attemptDisplay.textContent = STATE.attempt + '/' + STATE.maxAttempts;
+  if (STATE.score) {
+    scoreDisplay.textContent = STATE.score.passed + '/' + STATE.score.total;
+  } else {
+    scoreDisplay.textContent = '--/--';
+  }
+  if (STATE.firstSeen) {
+    elapsedDisplay.innerHTML = '<strong>Elapsed:</strong> ' + fmtElapsed(Date.now() - STATE.firstSeen.getTime());
+  }
+}
+
+function renderPipeline() {
+  pipelineSteps.innerHTML = '';
+  for (let i = 0; i < PIPELINE_STEPS.length; i++) {
+    const step = PIPELINE_STEPS[i];
+    const div = document.createElement('div');
+    div.className = 'pipeline-step ' + step.status;
+    div.innerHTML = '<span class="step-icon">' + step.icon + '</span>'
+      + '<span class="step-dot"></span>'
+      + '<span class="step-label">' + step.label + '</span>';
+    pipelineSteps.appendChild(div);
+    if (i < PIPELINE_STEPS.length - 1) {
+      const conn = document.createElement('div');
+      conn.className = 'step-connector';
+      if (step.status === 'done') conn.style.background = 'var(--green)';
+      pipelineSteps.appendChild(conn);
+    }
+  }
+}
+
+function renderLogFeed() {
+  const allEntries = [];
+  for (const [key, entries] of Object.entries(STATE.logEntries)) {
+    for (const e of entries) {
+      allEntries.push({ ...e, type: LOG_LABELS[key] || key });
+    }
+  }
+  allEntries.sort((a, b) => a.timestamp.localeCompare(b.timestamp) || 0);
+
+  const filter = logSearch.value.toLowerCase();
+  const filtered = filter ? allEntries.filter(e =>
+    e.message.toLowerCase().includes(filter) ||
+    e.type.toLowerCase().includes(filter) ||
+    e.timestamp.includes(filter)
+  ) : allEntries;
+
+  const visible = filtered.slice(-200);
+
+  if (visible.length === 0) {
+    logFeed.innerHTML = '<div class="log-empty">'
+      + (STATE.firstSeen ? 'No matching log entries' : 'Waiting for agent to start...')
+      + '</div>';
+    return;
+  }
+
+  let html = '';
+  for (const e of visible) {
+    const colorClass = Object.entries(LOG_COLORS).find(([k]) => e.type === k || e.type.includes(k))?.[0] || '';
+    const typeClass = 'type-' + (e.type || '').toLowerCase().replace(/_/g, '');
+    html += '<div class="log-entry ' + typeClass + '">'
+      + '<span class="ts">[' + e.timestamp + ']</span> '
+      + '<span class="label">' + escapeHtml(e.type) + ':</span> '
+      + '<span class="msg">' + escapeHtml(e.message.slice(0, 300)) + '</span>'
+      + '</div>';
+  }
+  logFeed.innerHTML = html;
+
+  // Auto-scroll to bottom only if user hasn't scrolled up
+  const panel = logFeed.parentElement.querySelector('.panel-body');
+  const isAtBottom = panel.scrollHeight - panel.scrollTop - panel.clientHeight < 50;
+  if (isAtBottom) {
+    panel.scrollTop = panel.scrollHeight;
+  }
+}
+
+function renderScores() {
+  if (STATE.scores.length === 0) {
+    scoresPanel.innerHTML = '<div class="log-empty">No test results yet</div>';
+    return;
+  }
+  let html = '';
+  for (let i = 0; i < STATE.scores.length; i++) {
+    const s = STATE.scores[i];
+    const pct = s.total > 0 ? (s.passed / s.total * 100) : 0;
+    const cls = scoreClass(pct);
+    const isLast = i === STATE.scores.length - 1;
+    const isActive = isLast && STATE.status === 'running';
+    let delta = '';
+    if (i > 0) {
+      const prev = STATE.scores[i - 1];
+      const diff = s.passed - prev.passed;
+      if (diff > 0) delta = '<span class="score-delta up">&#x25B2; +' + diff + '</span>';
+      else if (diff < 0) delta = '<span class="score-delta down">&#x25BC; ' + diff + '</span>';
+      else delta = '<span class="score-delta" style="color:var(--text-muted)">&#x25CB; 0</span>';
+    }
+    html += '<div class="score-row' + (isActive ? ' active' : '') + '">'
+      + '<span class="score-attempt">Attempt ' + (i + 1) + '</span>'
+      + '<div class="score-bar-wrap">'
+        + '<div class="score-bar ' + cls + '" style="width:' + pct + '%"></div>'
+      + '</div>'
+      + '<span class="score-text">' + s.passed + '/' + s.total + '</span>'
+      + delta
+      + '</div>';
+  }
+  scoresPanel.innerHTML = html;
+}
+
+function renderFailures() {
+  if (STATE.failures.length === 0) {
+    if (STATE.status === 'done') {
+      failurePanel.innerHTML = '<div class="failure-empty">&#x2705; All tests passing — no failures detected</div>';
+    } else {
+      failurePanel.innerHTML = '<div class="failure-empty">No failure data parsed yet</div>';
+    }
+    return;
+  }
+  STATE.failures.sort((a, b) => (a.passed / a.total) - (b.passed / b.total));
+  let html = '';
+  for (const f of STATE.failures) {
+    const pct = f.total > 0 ? (f.passed / f.total * 100) : 0;
+    let barCls = 'fail';
+    let statusText = '&#x274C;';
+    if (pct === 100) { barCls = 'pass'; statusText = '&#x2705;'; }
+    else if (pct >= 50) { barCls = 'partial'; statusText = '&#x26A0;&#xFE0F;'; }
+    html += '<div class="failure-row">'
+      + '<span class="failure-name">' + statusText + ' ' + escapeHtml(f.name) + '</span>'
+      + '<div class="failure-bar-wrap">'
+        + '<div class="failure-bar ' + barCls + '" style="width:' + pct + '%"></div>'
+      + '</div>'
+      + '<span class="failure-status">' + f.passed + '/' + f.total + '</span>'
+      + '</div>';
+  }
+  failurePanel.innerHTML = html;
+}
+
+function renderCode() {
+  if (!STATE.hasCode) {
+    codeContent.innerHTML = '';
+    codeEmpty.style.display = 'block';
+    codeTimestamp.textContent = '';
+    return;
+  }
+  codeEmpty.style.display = 'none';
+  const highlighted = hljs.highlight(STATE.currentCode, { language: 'python' }).value;
+  codeContent.innerHTML = highlighted;
+  codeTimestamp.textContent = 'Last updated: ' + timeAgo(STATE.lastUpdated);
+}
+
+function renderTabs() {
+  const allKeys = LOG_FILES;
+  const activeTab = tabsBar.dataset.active || allKeys[0];
+
+  let tabsHtml = '';
+  for (const key of allKeys) {
+    const count = STATE.logEntries[key]?.length || 0;
+    const isActive = key === activeTab;
+    tabsHtml += '<button class="tab-btn' + (isActive ? ' active' : '') + '" data-tab="' + key + '">'
+      + key.replace(/_/g, ' ') + ' <span class="count">' + count + '</span>'
+      + '</button>';
+  }
+  tabsBar.innerHTML = tabsHtml;
+
+  // Tab click handlers
+  tabsBar.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabsBar.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      tabsBar.dataset.active = btn.dataset.tab;
+      renderTabContent(btn.dataset.tab);
+    });
+  });
+
+  renderTabContent(activeTab);
+}
+
+function renderTabContent(key) {
+  const entries = STATE.logEntries[key] || [];
+  const filter = tabSearch.value.toLowerCase();
+  const filtered = filter ? entries.filter(e =>
+    e.message.toLowerCase().includes(filter) ||
+    e.type.toLowerCase().includes(filter) ||
+    e.timestamp.includes(filter)
+  ) : entries;
+
+  if (filtered.length === 0) {
+    tabContent.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:30px;font-size:13px;">'
+      + (filter ? 'No matching entries' : 'No entries')
+      + '</div>';
+    return;
+  }
+
+  let html = '';
+  for (const e of filtered) {
+    html += '<div class="tab-entry">'
+      + '<span style="color:var(--text-muted)">[' + e.timestamp + ']</span> '
+      + '<span style="color:' + (LOG_COLORS[e.type] || 'var(--text-primary)') + '">'
+      + escapeHtml(e.type) + ':</span> '
+      + escapeHtml(e.message)
+      + '</div>';
+  }
+  tabContent.innerHTML = html;
+}
+
+function renderAlerts() {
+  const errors = STATE.logEntries.errors;
+  if (errors.length > 0) {
+    alertBanner.className = 'alert-banner error visible';
+    alertIcon.innerHTML = '&#x26A0;&#xFE0F;';
+    alertMessage.textContent = errors.length + ' error(s) detected — check errors.log for details';
+  } else if (STATE.status === 'done') {
+    alertBanner.className = 'alert-banner success visible';
+    alertIcon.innerHTML = '&#x2705;';
+    alertMessage.textContent = 'All tests passed! Agent completed successfully.';
+  } else {
+    alertBanner.className = 'alert-banner';
+  }
+}
+
+// ===== SCORE CHANGE DETECTION =====
+let prevScoreCount = 0;
+function detectScoreChange() {
+  const current = STATE.scores.length;
+  if (current > prevScoreCount && prevScoreCount > 0) {
+    const last = STATE.scores[current - 1];
+    const prev = STATE.scores[prevScoreCount - 1];
+    if (last && prev) {
+      const diff = last.passed - prev.passed;
+      if (diff > 0) {
+        document.getElementById('mainGrid').classList.add('flash-green');
+        setTimeout(() => document.getElementById('mainGrid').classList.remove('flash-green'), 1000);
+      } else if (diff < 0) {
+        document.getElementById('mainGrid').classList.add('flash-orange');
+        setTimeout(() => document.getElementById('mainGrid').classList.remove('flash-orange'), 1000);
+      }
+    }
+  }
+  prevScoreCount = current;
+}
+
+// ===== STOP / ARCHIVE =====
+document.getElementById('stopBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('stopBtn');
+  btn.disabled = true;
+  btn.textContent = 'Archiving...';
+  try {
+    await fetch('/api/archive', { method: 'POST' });
+    // Reload page to show empty/clean state
+    setTimeout(() => location.reload(), 500);
+  } catch (e) {
+    // Fallback: manual instruction
+    try {
+      await navigator.clipboard.writeText(
+        'Move the archive folder manually:\n'
+        + 'mkdir agent_logs\\archives\\' + new Date().toISOString().slice(0,19).replace(/[:-]/g, '')
+        + ' && copy agent_logs\\*.log agent_logs\\archives\\'
+        + ' && type nul > agent_logs\\prompts.log && type nul > agent_logs\\decisions.log'
+        + ' && type nul > agent_logs\\commands.log && type nul > agent_logs\\test_runs.log'
+        + ' && type nul > agent_logs\\errors.log && type nul > agent_logs\\human_interventions.log'
+      );
+      alert('Archive command copied to clipboard. Paste and run in terminal, then refresh this page.');
+    } catch (e2) {
+      alert('Could not reach server. Refresh the page once the agent finishes.');
+    }
+  }
+  btn.disabled = false;
+  btn.textContent = '\u25A0 STOP';
+});
+
+// ===== TAB SEARCH =====
+tabSearch.addEventListener('input', () => {
+  const active = tabsBar.dataset.active || LOG_FILES[0];
+  renderTabContent(active);
+});
+
+// ===== COPY ALL =====
+copyAllBtn.addEventListener('click', () => {
+  const active = tabsBar.dataset.active || LOG_FILES[0];
+  const text = STATE.rawLogs[active] || '';
+  navigator.clipboard.writeText(text).then(() => {
+    copyAllBtn.innerHTML = '&#x2713; Copied!';
+    setTimeout(() => copyAllBtn.innerHTML = '&#x2398; Copy all', 2000);
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    copyAllBtn.innerHTML = '&#x2713; Copied!';
+    setTimeout(() => copyAllBtn.innerHTML = '&#x2398; Copy all', 2000);
+  });
+});
+
+// ===== LOG SEARCH =====
+logSearch.addEventListener('input', renderLogFeed);
+
+// ===== ELAPSED TIMER =====
+let elapsedInterval = null;
+
+// ===== MAIN LOOP =====
+async function tick() {
+  await fetchAll();
+  detectScoreChange();
+}
+
+// Start periodic refresh
+tick();
+setInterval(tick, 3000);
+
+// Update elapsed every second
+setInterval(() => {
+  if (STATE.firstSeen) {
+    elapsedDisplay.innerHTML = '<strong>Elapsed:</strong> ' + fmtElapsed(Date.now() - STATE.firstSeen.getTime());
+  }
+}, 1000);
+
+// ===== PROMPT SUBMISSION =====
+async function submitPrompt() {
+  const input = document.getElementById('promptInput');
+  const btn = document.getElementById('launchBtn');
+  const text = input.value.trim();
+  if (!text) { input.focus(); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Launching...';
+
+  try {
+    const resp = await fetch('/api/prompt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: text }),
+    });
+    const data = await resp.json();
+    if (data.status === 'launched') {
+      document.getElementById('promptSubmitted').classList.add('visible');
+      document.getElementById('promptSection').classList.remove('visible');
+      document.getElementById('promptSection').classList.add('running');
+    }
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = '\u25B6 Launch Agent';
+    alert('Could not reach server. Make sure server.py is running.');
+  }
+}
+
+// ===== STATUS POLLING =====
+async function pollStatus() {
+  try {
+    const resp = await fetch('/api/status');
+    const data = await resp.json();
+    const promptSection = document.getElementById('promptSection');
+
+    STATE.apiRunning = data.agent_running;
+
+    if (data.agent_running) {
+      promptSection.classList.remove('visible');
+      promptSection.classList.add('running');
+    } else if (!data.agent_running && !data.prompt_pending) {
+      promptSection.classList.add('visible');
+      promptSection.classList.remove('running');
+      document.getElementById('launchBtn').disabled = false;
+      document.getElementById('launchBtn').textContent = '\u25B6 Launch Agent';
+    }
+  } catch (e) {
+    // Server not reachable
+  }
+}
+  } catch (e) {
+    // Server not reachable
+  }
+}
+
+// Override the tick to also poll status
+const originalTick = tick;
+async function tick() {
+  await pollStatus();
+  await fetchAll();
+  detectScoreChange();
+}
+
+console.log('SPRK Agent Monitor started — type a prompt and launch!');
+</script>
+</body>
+</html>
